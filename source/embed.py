@@ -55,6 +55,7 @@ def buffered_arange(max):
     if not hasattr(buffered_arange, 'buf'):
         buffered_arange.buf = torch.LongTensor()
     if max > buffered_arange.buf.numel():
+        buffered_arange.buf.resize_(max)
         torch.arange(max, out=buffered_arange.buf)
     return buffered_arange.buf[:max]
 
@@ -114,7 +115,8 @@ class SentenceEncoder:
             tokens = tokens.cuda()
             lengths = lengths.cuda()
         self.encoder.eval()
-        embeddings = self.encoder(tokens, lengths)['sentemb']
+        with torch.no_grad():
+            embeddings = self.encoder(tokens, lengths)['sentemb']
         return embeddings.detach().cpu().numpy()
 
     def _tokenize(self, line):
@@ -340,7 +342,7 @@ if __name__ == '__main__':
                         help='Output sentence embeddings')
     parser.add_argument('--buffer-size', type=int, default=10000,
                         help='Buffer size (sentences)')
-    parser.add_argument('--max-tokens', type=int, default=12000,
+    parser.add_argument('--max-tokens', type=int, default=10000,
                         help='Maximum number of tokens to process in a batch')
     parser.add_argument('--max-sentences', type=int, default=None,
                         help='Maximum number of sentences to process in a batch')
